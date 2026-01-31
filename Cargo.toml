@@ -1,0 +1,10 @@
+[package]
+name = "what-the-ip"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+clap = { version = "4.5.56", features = ["derive"] }
+reqwest = { version = "0.13.1", features = ["json"] }
+serde = { version = "1.0.228", features = ["derive"] }
+tokio = { version = "1.49.0", features = ["full"] }
