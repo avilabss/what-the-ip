@@ -1,7 +1,7 @@
 mod ip_info;
 
 use clap::Parser;
-use ip_info::IPInfo;
+use ip_info::IPInfoClient;
 
 #[derive(Parser, Debug)]
 #[command(
@@ -36,9 +36,10 @@ struct Args {
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
 
-    let ip_info = IPInfo::fetch(args.ip.as_deref()).await;
+    let client = IPInfoClient::new(args.proxy.as_deref(), args.timeout);
+    let ip_info = client.fetch(args.ip.as_deref()).await;
     match ip_info {
-        Ok(data) => data.print(),
+        Ok(data) => data.print(args.extra_metadata, args.json),
         Err(e) => eprintln!("Error fetching IP info: {}", e),
     }
     Ok(())
