@@ -1,5 +1,6 @@
 mod client;
 mod error;
 mod models;
+mod utils;
 
-pub use models::IPInfoClient;
+pub use client::IPInfoClient;

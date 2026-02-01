@@ -1,8 +1,13 @@
-use super::models::{IPInfoClient, IPInfo, IPInfoError, IPInfoErrorResp, IPInfoMini};
+use super::error::{IPInfoError, IPInfoErrorResp};
+use super::models::IPInfo;
 use std::time::Duration;
 
 const IP_INFO_PROVIDER: &str = "https://ipinfo.io";
 
+pub struct IPInfoClient {
+    client: reqwest::Client,
+    base_url: String,
+}
 
 impl IPInfoClient {
     pub fn new(proxy_url: Option<&str>, timeout: u64) -> Result<Self, IPInfoError> {
@@ -43,73 +48,6 @@ impl IPInfoClient {
         } else {
             let e = resp.json::<IPInfoErrorResp>().await?;
             Err(IPInfoError::Api(e))
-        }
-    }
-}
-
-fn print_opt<T: std::fmt::Display>(label: &str, value: &Option<T>) {
-    const W: usize = 10;
-    if let Some(value) = value {
-        println!("{:W$} {}", label, value);
-    }
-}
-
-impl IPInfo {
-    fn get_mini(&self) -> IPInfoMini {
-        IPInfoMini {
-            ip: self.ip.clone(),
-        }
-    }
-
-    fn print_human_mini(&self) {
-        let mini = self.get_mini();
-        print_opt("ip:", &Some(mini.ip));
-    }
-
-    fn print_human_full(&self) {
-        print_opt("ip:", &Some(self.ip.clone()));
-        print_opt("hostname:", &self.hostname);
-        print_opt("city:", &self.city);
-        print_opt("region:", &self.region);
-        print_opt("country:", &self.country);
-        print_opt("loc:", &self.loc);
-        print_opt("org:", &self.org);
-        print_opt("postal:", &self.postal);
-        print_opt("timezone:", &self.timezone);
-        print_opt("readme:", &self.readme);
-        print_opt("anycast:", &self.anycast);
-    }
-
-    fn print_human(&self, extra_metadata: bool) {
-        if extra_metadata {
-            self.print_human_full();
-        } else {
-            self.print_human_mini();
-        }
-    }
-
-    fn print_json_mini(&self) {
-        let mini = self.get_mini();
-        println!("{}", serde_json::to_string_pretty(&mini).unwrap());
-    }
-
-    fn print_json_full(&self) {
-        println!("{}", serde_json::to_string_pretty(&self).unwrap());
-    }
-
-    fn print_json(&self, extra_metadata: bool) {
-        if extra_metadata {
-            self.print_json_full();
-        } else {
-            self.print_json_mini();
-        }
-    }
-
-    pub fn print(&self, extra_metadata: bool, json: bool) {
-        if json {
-            self.print_json(extra_metadata);
-        } else {
-            self.print_human(extra_metadata);
         }
     }
 }
