@@ -1,53 +1,8 @@
-use serde::{Deserialize, Serialize};
+use super::models::{IPInfoClient, IPInfo, IPInfoError, IPInfoErrorResp, IPInfoMini};
 use std::time::Duration;
 
 const IP_INFO_PROVIDER: &str = "https://ipinfo.io";
 
-#[derive(Serialize, Deserialize, Debug)]
-#[allow(dead_code)]
-pub struct IPInfoErrorRespDetail {
-    title: String,
-    message: String,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-#[allow(dead_code)]
-pub struct IPInfoErrorResp {
-    status: u16,
-    error: IPInfoErrorRespDetail,
-}
-
-#[derive(Debug)]
-pub enum IPInfoError {
-    Request(reqwest::Error),
-    Api(IPInfoErrorResp),
-}
-
-impl std::fmt::Display for IPInfoError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::Request(e) => write!(f, "Request error: {}", e),
-            Self::Api(e) => write!(
-                f,
-                "API error {}: {} - {}",
-                e.status, e.error.title, e.error.message
-            ),
-        }
-    }
-}
-
-impl std::error::Error for IPInfoError {}
-
-impl From<reqwest::Error> for IPInfoError {
-    fn from(e: reqwest::Error) -> Self {
-        IPInfoError::Request(e)
-    }
-}
-
-pub struct IPInfoClient {
-    client: reqwest::Client,
-    base_url: String,
-}
 
 impl IPInfoClient {
     pub fn new(proxy_url: Option<&str>, timeout: u64) -> Result<Self, IPInfoError> {
@@ -90,28 +45,6 @@ impl IPInfoClient {
             Err(IPInfoError::Api(e))
         }
     }
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-#[allow(dead_code)]
-pub struct IPInfo {
-    ip: String,
-    hostname: Option<String>,
-    city: Option<String>,
-    region: Option<String>,
-    country: Option<String>,
-    loc: Option<String>,
-    org: Option<String>,
-    postal: Option<String>,
-    timezone: Option<String>,
-    readme: Option<String>,
-    anycast: Option<bool>,
-}
-
-#[derive(Serialize, Debug)]
-#[allow(dead_code)]
-struct IPInfoMini {
-    ip: String,
 }
 
 fn print_opt<T: std::fmt::Display>(label: &str, value: &Option<T>) {
