@@ -32,13 +32,19 @@ struct Args {
     extra_metadata: bool,
 }
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let args = Args::parse();
-
+async fn run(args: Args) -> Result<(), Box<dyn std::error::Error>> {
     let client = IPInfoClient::new(args.proxy.as_deref(), args.timeout)?;
     let ip_info = client.fetch(args.ip.as_deref()).await?;
     ip_info.print(args.extra_metadata, args.json);
-
     Ok(())
+}
+
+#[tokio::main]
+async fn main() {
+    let args = Args::parse();
+
+    if let Err(e) = run(args).await {
+        eprintln!("{}", e);
+        std::process::exit(1);
+    }
 }

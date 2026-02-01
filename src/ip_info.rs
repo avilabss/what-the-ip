@@ -3,13 +3,54 @@ use std::time::Duration;
 
 const IP_INFO_PROVIDER: &str = "https://ipinfo.io";
 
+#[derive(Serialize, Deserialize, Debug)]
+#[allow(dead_code)]
+pub struct IPInfoErrorRespDetail {
+    title: String,
+    message: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+#[allow(dead_code)]
+pub struct IPInfoErrorResp {
+    status: u16,
+    error: IPInfoErrorRespDetail,
+}
+
+#[derive(Debug)]
+pub enum IPInfoError {
+    Request(reqwest::Error),
+    Api(IPInfoErrorResp),
+}
+
+impl std::fmt::Display for IPInfoError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Request(e) => write!(f, "Request error: {}", e),
+            Self::Api(e) => write!(
+                f,
+                "API error {}: {} - {}",
+                e.status, e.error.title, e.error.message
+            ),
+        }
+    }
+}
+
+impl std::error::Error for IPInfoError {}
+
+impl From<reqwest::Error> for IPInfoError {
+    fn from(e: reqwest::Error) -> Self {
+        IPInfoError::Request(e)
+    }
+}
+
 pub struct IPInfoClient {
     client: reqwest::Client,
     base_url: String,
 }
 
 impl IPInfoClient {
-    pub fn new(proxy_url: Option<&str>, timeout: u64) -> Result<Self, reqwest::Error> {
+    pub fn new(proxy_url: Option<&str>, timeout: u64) -> Result<Self, IPInfoError> {
         let mut client = reqwest::Client::builder().timeout(Duration::from_secs(timeout));
 
         if let Some(proxy_url) = proxy_url {
@@ -30,7 +71,7 @@ impl IPInfoClient {
         }
     }
 
-    pub async fn fetch(&self, ip: Option<&str>) -> Result<IPInfo, reqwest::Error> {
+    pub async fn fetch(&self, ip: Option<&str>) -> Result<IPInfo, IPInfoError> {
         let mut url = self.base_url.clone();
 
         if let Some(ip) = ip {
@@ -40,7 +81,14 @@ impl IPInfoClient {
 
         url.push_str("/json");
 
-        self.client.get(&url).send().await?.json::<IPInfo>().await
+        let resp = self.client.get(&url).send().await?;
+        if resp.status().is_success() {
+            let ip_info = resp.json::<IPInfo>().await?;
+            Ok(ip_info)
+        } else {
+            let e = resp.json::<IPInfoErrorResp>().await?;
+            Err(IPInfoError::Api(e))
+        }
     }
 }
 
