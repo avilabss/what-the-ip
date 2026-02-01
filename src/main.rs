@@ -12,7 +12,7 @@ use ip_info::IPInfoClient;
 )]
 struct Args {
     /// IP address to look up (defaults to your own IP)
-    #[arg(short = 'a', long, value_name = "IP")]
+    #[arg(short, long, value_name = "IP")]
     ip: Option<String>,
 
     /// Output in JSON format (default = false)
@@ -32,15 +32,19 @@ struct Args {
     extra_metadata: bool,
 }
 
+async fn run(args: Args) -> Result<(), Box<dyn std::error::Error>> {
+    let client = IPInfoClient::new(args.proxy.as_deref(), args.timeout)?;
+    let ip_info = client.fetch(args.ip.as_deref()).await?;
+    ip_info.print(args.extra_metadata, args.json);
+    Ok(())
+}
+
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() {
     let args = Args::parse();
 
-    let client = IPInfoClient::new(args.proxy.as_deref(), args.timeout);
-    let ip_info = client.fetch(args.ip.as_deref()).await;
-    match ip_info {
-        Ok(data) => data.print(args.extra_metadata, args.json),
-        Err(e) => eprintln!("Error fetching IP info: {}", e),
+    if let Err(e) = run(args).await {
+        eprintln!("{}", e);
+        std::process::exit(1);
     }
-    Ok(())
 }
