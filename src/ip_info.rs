@@ -66,6 +66,13 @@ struct IPInfoMini {
     ip: String,
 }
 
+fn print_opt<T: std::fmt::Display>(label: &str, value: &Option<T>) {
+    const W: usize = 10;
+    if let Some(value) = value {
+        println!("{:W$} {}", label, value);
+    }
+}
+
 impl IPInfo {
     fn get_mini(&self) -> IPInfoMini {
         IPInfoMini {
@@ -75,43 +82,21 @@ impl IPInfo {
 
     fn print_human_mini(&self) {
         let mini = self.get_mini();
-        println!("ip: {}", mini.ip);
+        print_opt("ip:", &Some(mini.ip));
     }
 
     fn print_human_full(&self) {
-        const W: usize = 10;
-
-        println!("{:W$} {}", "ip:", self.ip);
-        if let Some(hostname) = &self.hostname {
-            println!("{:W$} {}", "hostname:", hostname);
-        }
-        if let Some(city) = &self.city {
-            println!("{:W$} {}", "city:", city);
-        }
-        if let Some(region) = &self.region {
-            println!("{:W$} {}", "region:", region);
-        }
-        if let Some(country) = &self.country {
-            println!("{:W$} {}", "country:", country);
-        }
-        if let Some(loc) = &self.loc {
-            println!("{:W$} {}", "loc:", loc);
-        }
-        if let Some(org) = &self.org {
-            println!("{:W$} {}", "org:", org);
-        }
-        if let Some(postal) = &self.postal {
-            println!("{:W$} {}", "postal:", postal);
-        }
-        if let Some(timezone) = &self.timezone {
-            println!("{:W$} {}", "timezone:", timezone);
-        }
-        if let Some(readme) = &self.readme {
-            println!("{:W$} {}", "readme:", readme);
-        }
-        if let Some(anycast) = &self.anycast {
-            println!("{:W$} {}", "anycast:", anycast);
-        }
+        print_opt("ip:", &Some(self.ip.clone()));
+        print_opt("hostname:", &self.hostname);
+        print_opt("city:", &self.city);
+        print_opt("region:", &self.region);
+        print_opt("country:", &self.country);
+        print_opt("loc:", &self.loc);
+        print_opt("org:", &self.org);
+        print_opt("postal:", &self.postal);
+        print_opt("timezone:", &self.timezone);
+        print_opt("readme:", &self.readme);
+        print_opt("anycast:", &self.anycast);
     }
 
     fn print_human(&self, extra_metadata: bool) {
