@@ -12,7 +12,7 @@ use ip_info::IPInfoClient;
 )]
 struct Args {
     /// IP address to look up (defaults to your own IP)
-    #[arg(short = 'a', long, value_name = "IP")]
+    #[arg(short, long, value_name = "IP")]
     ip: Option<String>,
 
     /// Output in JSON format (default = false)
@@ -36,11 +36,9 @@ struct Args {
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
 
-    let client = IPInfoClient::new(args.proxy.as_deref(), args.timeout);
-    let ip_info = client.fetch(args.ip.as_deref()).await;
-    match ip_info {
-        Ok(data) => data.print(args.extra_metadata, args.json),
-        Err(e) => eprintln!("Error fetching IP info: {}", e),
-    }
+    let client = IPInfoClient::new(args.proxy.as_deref(), args.timeout)?;
+    let ip_info = client.fetch(args.ip.as_deref()).await?;
+    ip_info.print(args.extra_metadata, args.json);
+
     Ok(())
 }

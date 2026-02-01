@@ -1,5 +1,4 @@
-use serde::Deserialize;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::time::Duration;
 
 const IP_INFO_PROVIDER: &str = "https://ipinfo.io";
@@ -10,17 +9,17 @@ pub struct IPInfoClient {
 }
 
 impl IPInfoClient {
-    pub fn new(proxy_url: Option<&str>, timeout: u64) -> Self {
+    pub fn new(proxy_url: Option<&str>, timeout: u64) -> Result<Self, reqwest::Error> {
         let mut client = reqwest::Client::builder().timeout(Duration::from_secs(timeout));
 
         if let Some(proxy_url) = proxy_url {
-            client = client.proxy(reqwest::Proxy::all(proxy_url).unwrap());
+            client = client.proxy(reqwest::Proxy::all(proxy_url)?);
         }
 
-        IPInfoClient {
-            client: client.build().unwrap(),
+        Ok(IPInfoClient {
+            client: client.build()?,
             base_url: IP_INFO_PROVIDER.to_string(),
-        }
+        })
     }
 
     #[cfg(test)]
@@ -34,12 +33,9 @@ impl IPInfoClient {
     pub async fn fetch(&self, ip: Option<&str>) -> Result<IPInfo, reqwest::Error> {
         let mut url = self.base_url.clone();
 
-        match ip {
-            Some(ip) => {
-                url.push('/');
-                url.push_str(ip);
-            }
-            None => {}
+        if let Some(ip) = ip {
+            url.push('/');
+            url.push_str(ip);
         }
 
         url.push_str("/json");
@@ -66,7 +62,7 @@ pub struct IPInfo {
 
 #[derive(Serialize, Debug)]
 #[allow(dead_code)]
-pub struct IPInfoMini {
+struct IPInfoMini {
     ip: String,
 }
 
@@ -83,40 +79,42 @@ impl IPInfo {
     }
 
     fn print_human_full(&self) {
-        println!("ip: {}", self.ip);
+        const W: usize = 10;
+
+        println!("{:W$} {}", "ip:", self.ip);
         if let Some(hostname) = &self.hostname {
-            println!("hostname: {}", hostname);
+            println!("{:W$} {}", "hostname:", hostname);
         }
         if let Some(city) = &self.city {
-            println!("city: {}", city);
+            println!("{:W$} {}", "city:", city);
         }
         if let Some(region) = &self.region {
-            println!("region: {}", region);
+            println!("{:W$} {}", "region:", region);
         }
         if let Some(country) = &self.country {
-            println!("country: {}", country);
+            println!("{:W$} {}", "country:", country);
         }
         if let Some(loc) = &self.loc {
-            println!("loc: {}", loc);
+            println!("{:W$} {}", "loc:", loc);
         }
         if let Some(org) = &self.org {
-            println!("org: {}", org);
+            println!("{:W$} {}", "org:", org);
         }
         if let Some(postal) = &self.postal {
-            println!("postal: {}", postal);
+            println!("{:W$} {}", "postal:", postal);
         }
         if let Some(timezone) = &self.timezone {
-            println!("timezone: {}", timezone);
+            println!("{:W$} {}", "timezone:", timezone);
         }
         if let Some(readme) = &self.readme {
-            println!("readme: {}", readme);
+            println!("{:W$} {}", "readme:", readme);
         }
         if let Some(anycast) = &self.anycast {
-            println!("anycast: {}", anycast);
+            println!("{:W$} {}", "anycast:", anycast);
         }
     }
 
-    pub fn print_human(&self, extra_metadata: bool) {
+    fn print_human(&self, extra_metadata: bool) {
         if extra_metadata {
             self.print_human_full();
         } else {
@@ -133,7 +131,7 @@ impl IPInfo {
         println!("{}", serde_json::to_string_pretty(&self).unwrap());
     }
 
-    pub fn print_json(&self, extra_metadata: bool) {
+    fn print_json(&self, extra_metadata: bool) {
         if extra_metadata {
             self.print_json_full();
         } else {
